@@ -1,212 +1,211 @@
-#include <SFML/Graphics.hpp>
-#include <optional>
-#include <iostream>
-#include <vector>
-
-using namespace sf;
+#include "../lib/MainFrame.h"
+#include "../lib/SfmlFun.h"
 using namespace std;
+using namespace sf;
 
-void resizeBackground(Sprite& background, const RenderWindow& window) 
-{
-    Vector2u windowSize = window.getSize();
-
-    Vector2u textureSize = background.getTexture().getSize();
-
-    float scaleX = static_cast<float>(windowSize.x) / textureSize.x;
-    float scaleY = static_cast<float>(windowSize.y) / textureSize.y;
-
-    float scale = max(scaleX, scaleY);
-
-    background.setScale(Vector2f(scale, scale));
-
-    float offsetX = (windowSize.x - textureSize.x * scale) / 2;
-    float offsetY = (windowSize.y - textureSize.y * scale) / 2;
-    background.setPosition(sf::Vector2f(offsetX, offsetY));
-}
-
-
-bool isNotOut(Sprite& character, char direction, const RenderWindow& window) {
-    // Ottieni le dimensioni della finestra
-    Vector2u windowSize = window.getSize();
-
-    // Calcola le dimensioni attuali del personaggio
-    float charX= character.getTexture().getSize().x * character.getScale().x;
-    float charY= character.getTexture().getSize().y * character.getScale().y;
-
-    // Controlla la posizione in base alla direzione
-    if ((character.getPosition().x < 0 && direction == 'A')  // Muove verso sinistra
-        || (character.getPosition().x > windowSize.x - charX && direction == 'D')  // Muove verso destra
-        || (character.getPosition().y < 0 && direction == 'W')  // Muove verso l'alto
-        || (character.getPosition().y > windowSize.y - charY && direction == 'S')) {  // Muove verso il basso
-        return false;  // Il personaggio è fuori dai bordi
-    }
-
-    return true;  // Il personaggio è all'interno dei bordi
-}
-
-
-int main() 
+int main ()
 {
     // Creazione della finestra
-    RenderWindow window(VideoMode::getDesktopMode(), "Simulated Fullscreen", Style::Default);
+    RenderWindow window(VideoMode::getDesktopMode(), "Relics & Ruins", Style::Default);
     window.setPosition(Vector2i(0, 0)); // Posiziona la finestra nell'angolo in alto a sinistra
-    //RenderWindow window(VideoMode({width, height}), "SFML Test");
     window.setFramerateLimit(60);
 
-    vector<Texture> textureBack;
-    vector<string> textureFilesBack = {"../assets/Textures/Character/Back/CharBack1.png", "../assets/Textures/Character/Back/CharBack2.png", "../assets/Textures/Character/Back/CharBack3.png", "../assets/Textures/Character/Back/CharBack4.png",};
-    for (const auto& file : textureFilesBack) 
-    {
-        Texture texture;
-        if (!texture.loadFromFile(file)) 
-        {
-            return -1; // Esci in caso di errore
-        }
-        textureBack.push_back(texture); // Inserisci la texture nel vettore
-    }
+    const auto cursorHand = Cursor::createFromSystem(Cursor::Type::Hand).value();
+    const auto cursorArrow = Cursor::createFromSystem(Cursor::Type::Arrow).value();
+    Vector2i mousePosition;
 
-    vector<Texture> textureFront;
-    vector<string> textureFilesFront = {"../assets/Textures/Character/Front/CharFront1.png", "../assets/Textures/Character/Front/CharFront2.png", "../assets/Textures/Character/Front/CharFront3.png", "../assets/Textures/Character/Front/CharFront4.png",};
-    for (const auto& file : textureFilesFront) 
-    {
-        Texture texture;
-        if (!texture.loadFromFile(file)) 
-        {
-            return -1; // Esci in caso di errore
-        }
-        textureFront.push_back(texture); // Inserisci la texture nel vettore
-    }
-    vector<Texture> textureLeft;
-    vector<string> textureFilesLeft = {"../assets/Textures/Character/Left/CharLeft1.png", "../assets/Textures/Character/Left/CharLeft2.png", "../assets/Textures/Character/Left/CharLeft3.png", "../assets/Textures/Character/Left/CharLeft4.png",};
-    for (const auto& file : textureFilesLeft) 
-    {
-        Texture texture;
-        if (!texture.loadFromFile(file)) 
-        {
-            return -1; // Esci in caso di errore
-        }
-        textureLeft.push_back(texture); // Inserisci la texture nel vettore
-    }
-    vector<Texture> textureRight;
-    vector<string> textureFilesRight = {"../assets/Textures/Character/Right/CharRight1.png", "../assets/Textures/Character/Right/CharRight2.png", "../assets/Textures/Character/Right/CharRight3.png", "../assets/Textures/Character/Right/CharRight4.png",};
-    for (const auto& file : textureFilesRight) 
-    {
-        Texture texture;
-        if (!texture.loadFromFile(file)) 
-        {
-            return -1; // Esci in caso di errore
-        }
-        textureRight.push_back(texture); // Inserisci la texture nel vettore
-    }
+    Texture textBoxTexture;
+    if (!textBoxTexture.loadFromFile("../assets/Textures/Backgrounds/TextBoxBackground.png")) 
+        return -1;
     
-    // Configurazione dello sprite
-    Sprite character(textureBack[0]);
-    window.draw(character);
-    character.setPosition(Vector2f(400, 200)); // Posizione iniziale
+    // TextBox e posizione relativa alla finestra
+    RectangleShape textBox;
+    textBox.setFillColor(Color::White);
+    textBox.setTexture(&textBoxTexture);
+    const float marginX = 20.0f;
+    const float marginY = 10.0f;
+    const Vector2f rectangleSize(
+        window.getSize().x - 2 * marginX,
+        window.getSize().y / 4 // Rettangolo alto un quarto della finestra
+    );
+    textBox.setSize(rectangleSize);
+    textBox.setPosition(Vector2f(marginX, window.getSize().y - rectangleSize.y - marginY));
 
-    // Variabili per il movimento e l'animazione
-    float speed = 100.0f; // Velocità del movimento
-    float animationTimer = 0.0f;
-    const float frameDuration = 0.1f; // Durata di ogni frame (in secondi)
+    Font textBoxFont;
+    if (!textBoxFont.openFromFile("../assets/Fonts/TextBox.ttf"))
+        return -1; 
+
+    Text textBoxText(textBoxFont, "Hello World", 100);
+    textBoxText.setFont(textBoxFont);
+    textBoxText.setCharacterSize(24); // Dimensione del testo
+    textBoxText.setFillColor(Color::Black);
+     
+
+    string fullText = "";
+    string currentText = "";
     Clock clock;
+    float delay = 0.02f; // Delay in secondi tra una lettera e l'altra
+    bool hasJustStarted = true; // Flag per l'inizializzazione
+    bool isPrintingText = false; // Flag per gestire la stampa graduale del testo
 
-    // Timer per l'animazione
-    Clock animationClock;
-    float animationInterval = 0.5f; // Intervallo di tempo tra i frame (in secondi)
-    int currentFrame = 0;
+    Text tutChoiceText(textBoxFont, "Do you want to start from scratch?", 40);
+    tutChoiceText.setPosition(Vector2f(textBox.getPosition().x + 10, textBox.getPosition().y + 10));
+    tutChoiceText.setFillColor(Color::Black);
 
-    // Direzione corrente (inizialmente "Back")
-    enum Direction { Back, Front, Left, Right };
-    Direction currentDirection = Back;
+    RectangleShape tutBoxSelectionYes;
+    tutBoxSelectionYes.setFillColor(Color(0,0,0,0));
+    tutBoxSelectionYes.setSize(Vector2f(100, 55));
+    tutBoxSelectionYes.setPosition(Vector2f(textBox.getPosition().x + 900, textBox.getPosition().y + 10));
+    Text tutSelectionYes(textBoxFont, "YES", 40);
+    tutSelectionYes.setPosition(Vector2f(tutBoxSelectionYes.getPosition().x + 5, tutBoxSelectionYes.getPosition().y + 5));
+    tutSelectionYes.setFillColor(Color::Black);
+    
+    RectangleShape tutBoxSelectionNo;
+    tutBoxSelectionNo.setFillColor(Color(0,0,0,0));
+    tutBoxSelectionNo.setSize(Vector2f(66, 55));
+    tutBoxSelectionNo.setPosition(Vector2f(textBox.getPosition().x + 1040, textBox.getPosition().y + 10));
+    Text tutSelectionNo(textBoxFont, "NO", 40);
+    tutSelectionNo.setPosition(Vector2f(tutBoxSelectionNo.getPosition().x + 5, tutBoxSelectionNo.getPosition().y + 5));
+    tutSelectionNo.setFillColor(Color::Black);
 
-    while (window.isOpen()) {
+
+    // Sfondo
+    Texture backgroundTextureValoria;
+    if (!backgroundTextureValoria.loadFromFile("../assets/Textures/Backgrounds/Valoria/CapitalLobby.png")) 
+    {
+        cerr << "Errore: impossibile caricare lo sfondo!" << endl;
+        return -1;
+    }
+    Sprite backgroundSprite(backgroundTextureValoria);
+
+    string selection = "";
+
+    
+    bool inputBoxSelected = false;
+
+    Text characterSelectionText(textBoxFont, "Select your character", 40);
+    characterSelectionText.setPosition(Vector2f(textBox.getPosition().x + 10, textBox.getPosition().y - 550));
+    characterSelectionText.setFillColor(Color::Black);
+
+    RectangleShape inputBox;
+    Texture inputBoxTexture;
+    if (!inputBoxTexture.loadFromFile("../assets/UI_Test/PNG/Default/Border/panel-border-008.png")) 
+        return -1;
+    //inputBox.setTexture(&inputBoxTexture);
+    inputBox.setFillColor(Color(0,0,0,0));
+    inputBox.setOutlineColor(Color::Black);
+    inputBox.setOutlineThickness(2);
+    inputBox.setSize(Vector2f(textBox.getSize().x-50, 70));
+    inputBox.setPosition(Vector2f(characterSelectionText.getPosition().x, characterSelectionText.getPosition().y + 70));
+
+    String playerInput;
+    Text playerText (textBoxFont, "", 36);
+    playerText.setFillColor(Color::Black);
+    playerText.setPosition(Vector2f(inputBox.getPosition().x + 10, inputBox.getPosition().y + 10));
+
+    string characterName = "";
+
+
+    // Ciclo principale del gioco
+    while (window.isOpen()) 
+    {
         // Gestione degli eventi
         optional<Event> event;
         while ((event = window.pollEvent())) {
             if (event->is<Event::Closed>()) {
                 window.close();
+            } else if (const auto* textEvent = event->getIf<Event::TextEntered>()) {
+                if (textEvent->unicode < 128 && inputBoxSelected) {
+                    playerInput += static_cast<char>(textEvent->unicode);
+                    playerText.setString(playerInput);
+                }
             }
         }
+        mousePosition = Mouse::getPosition(window);
 
-        // Calcolo del delta time
-        float deltaTime = clock.restart().asSeconds();
-        animationTimer += deltaTime;
-
-        // Movimento del personaggio
-        Vector2f movement(0.0f, 0.0f);
-
-        // Cambiamento texture solo durante il movimento
-        bool isMoving = false;
-
-        if (Keyboard::isKeyPressed(Keyboard::Key::W) && isNotOut(character, 'W', window)) {
-            movement.y -= speed * deltaTime;
-            currentDirection = Back;
-            isMoving = true;
-            //character.setTexture(textureBack[0], true);    
-        }
-        if (Keyboard::isKeyPressed(Keyboard::Key::S) && isNotOut(character,'S', window)) {
-            //movement.y += speed * animationClock.getElapsedTime().asSeconds();
-            currentDirection = Front;
-            isMoving = true;
-            movement.y += speed * deltaTime;
-            //character.setTexture(textureFront[0], true);
-        }
-        if (Keyboard::isKeyPressed(Keyboard::Key::A) && isNotOut(character, 'A', window)) {
-            //movement.x -= speed * animationClock.getElapsedTime().asSeconds();
-            currentDirection = Left;
-            isMoving = true;
-            movement.x -= speed * deltaTime;
-            //character.setTexture(textureLeft[0], true);
-        } 
-        if (Keyboard::isKeyPressed(Keyboard::Key::D) && isNotOut(character, 'D', window)) {
-            //movement.x += speed * animationClock.getElapsedTime().asSeconds();
-            currentDirection = Right;
-            isMoving = true;
-            movement.x += speed * deltaTime;
-            //character.setTexture(textureRight[0], true);  
-        }
-
-        // Muovi il personaggio
-        character.move(movement);
-
-        if (isMoving && animationClock.getElapsedTime().asSeconds() > animationInterval) 
-        {
-            animationClock.restart(); // Resetta il timer
-            currentFrame = (currentFrame + 1) % 4; // Avanza al frame successivo (ciclo)
-
-            switch (currentDirection) {
-                case Back: character.setTexture(textureBack[currentFrame], true); break;
-                case Front: character.setTexture(textureFront[currentFrame], true); break;
-                case Left: character.setTexture(textureLeft[currentFrame], true); break;
-                case Right: character.setTexture(textureRight[currentFrame], true); break;
-            }
-        }
-        
-        Texture backgroundTextureValoria;
-        if (!backgroundTextureValoria.loadFromFile("../assets/Textures/Backgrounds/Valoria/CapitalLobby.png")) 
-        {
-            cerr << "Errore: impossibile caricare lo sfondo!" << endl;
-            return -1;
-        }
-        Sprite backgroundSprite(backgroundTextureValoria);
-
-        // Ridimensiona lo sfondo
+        // Sfondo
         resizeBackground(backgroundSprite, window);
-        
-        /*
-            Vector2u windowSize = window.getSize();
-            // Calcola il fattore di scala
-            float scaleX = static_cast<float>(windowSize.x) / backgroundTextureValoria.getSize().x;
-            float scaleY = static_cast<float>(windowSize.y) / backgroundTextureValoria.getSize().y;
-
-            // Adatta lo sprite alla dimensione della finestra
-            backgroundSprite.setScale(sf::Vector2f(scaleX, scaleY));  // Usa Vector2f per setScale
-        */
-    
-        // Disegna la scena
         window.clear();
         window.draw(backgroundSprite);
-        window.draw(character);
+
+        //Tutorial
+        if (hasJustStarted) 
+        {
+            hasJustStarted = false;
+            isPrintingText = true;
+            initializeTextBoxForTutorial(textBox, textBoxText, window, fullText, currentText);
+        } 
+        if (isPrintingText) 
+        {
+            isPrintingText = !handleTextPrintingForTutorial(clock, delay, fullText, currentText, textBoxText, window);
+            window.draw(textBox);
+            window.draw(textBoxText);
+        } else if (selection == "YES")
+        {
+            window.clear();
+            window.draw(backgroundSprite);
+            textBox.setSize(rectangleSize);
+            textBox.setPosition(Vector2f(marginX, window.getSize().y - rectangleSize.y - marginY));
+            window.draw(textBox);
+            /*
+                creazione personaggio con select_char()
+            */
+        } else if (selection == "NO")
+        {
+            window.clear();
+            window.draw(backgroundSprite);
+            window.draw(textBox);
+            window.draw(characterSelectionText);
+            window.draw(inputBox);
+            window.draw(playerText);
+            if(checkForMouseClick(inputBox, window, mousePosition))
+            {
+                inputBoxSelected = true;
+                inputBox.setOutlineColor(Color(20, 90, 200));
+            } else if(Mouse::isButtonPressed(Mouse::Button::Left))
+            {
+                inputBoxSelected = false;
+                inputBox.setOutlineColor(Color::Black);
+            }
+            if (inputBox.getOutlineColor() == Color(20,90,200) && Keyboard::isKeyPressed(Keyboard::Key::Enter))
+            {
+                inputBoxSelected = false;
+                inputBox.setOutlineColor(Color::Black);
+                characterName = playerText.getString().toAnsiString();
+                cout << endl << characterName << endl;
+                playerInput.clear();
+                playerText.setString(playerInput);
+            }
+            /*
+                selezione personaggio con select_char()
+            */
+        } else 
+        {
+            window.draw(textBox);
+            window.draw(textBoxText);
+            window.draw(tutChoiceText);
+            window.draw(tutBoxSelectionYes);
+            window.draw(tutSelectionYes);
+            window.draw(tutBoxSelectionNo);
+            window.draw(tutSelectionNo);
+            // Check for mouse hover over rectangle
+            if (isMouseHovering(tutBoxSelectionYes, window, mousePosition))
+                window.setMouseCursor(cursorHand);
+            else if (isMouseHovering(tutBoxSelectionNo, window, mousePosition))
+                window.setMouseCursor(cursorHand);
+            else
+                window.setMouseCursor(cursorArrow);
+
+            // Check for mouse click rectangle
+            if (checkForMouseClick(tutBoxSelectionYes, window, mousePosition)){
+                selection = "YES";
+                window.setMouseCursor(cursorArrow);
+            }else if (checkForMouseClick(tutBoxSelectionNo, window, mousePosition)){
+                selection = "NO";
+                window.setMouseCursor(cursorArrow);
+            }
+        }
+
         window.display();
     }
     return 0;
