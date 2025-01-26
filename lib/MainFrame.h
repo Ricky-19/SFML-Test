@@ -303,7 +303,7 @@ public:
 
     // Carica i personaggi esistenti se il file esiste
     json characters;
-    ifstream input_file("characters.json");
+    ifstream input_file("../include/characters.json");
     if (input_file.is_open()) {
       input_file >> characters;
       input_file.close();
@@ -326,7 +326,7 @@ public:
     }
 
     // Salva il file JSON aggiornato
-    ofstream output_file("characters.json");
+    ofstream output_file("../include/characters.json");
     if (output_file.is_open()) {
       output_file << characters.dump(4);
       output_file.close();
