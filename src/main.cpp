@@ -89,9 +89,6 @@ int main ()
 
     RectangleShape inputBox;
     Texture inputBoxTexture;
-    if (!inputBoxTexture.loadFromFile("../assets/UI_Test/PNG/Default/Border/panel-border-008.png")) 
-        return -1;
-    //inputBox.setTexture(&inputBoxTexture);
     inputBox.setFillColor(Color(0,0,0,0));
     inputBox.setOutlineColor(Color::Black);
     inputBox.setOutlineThickness(2);
@@ -104,6 +101,41 @@ int main ()
     playerText.setPosition(Vector2f(inputBox.getPosition().x + 10, inputBox.getPosition().y + 10));
 
     string characterName = "";
+    int characterCreationStep = 1;
+
+    Text characterNamesList(textBoxFont, "No Characters Found", 40);
+    characterNamesList.setFillColor(Color::Black);
+    characterNamesList.setPosition(Vector2f(inputBox.getPosition().x, inputBox.getPosition().y + 150));
+
+    Text newCharacterCreationText(textBoxFont, "Create Your Character\n\n\n Name:\n\n Race:\n\n Sex:\n\n Difficulty:", 40);
+    newCharacterCreationText.setFillColor(Color::Black);
+    newCharacterCreationText.setPosition(Vector2f(textBox.getPosition().x + 10, textBox.getPosition().y - 550));
+
+    string newCharacterName = "";
+    Text newCharacterNameText(textBoxFont, "", 40);
+    newCharacterNameText.setFillColor(Color::Black);
+    newCharacterNameText.setPosition(Vector2f(newCharacterCreationText.getPosition().x + 155, newCharacterCreationText.getPosition().y +160));
+
+    string newCharacterRace = "";
+    Text newCharacterRaceText(textBoxFont, "", 40);
+    newCharacterRaceText.setFillColor(Color::Black);
+    newCharacterRaceText.setPosition(Vector2f(newCharacterCreationText.getPosition().x + 150, newCharacterCreationText.getPosition().y + 265));
+
+    string newCharacterSex = "";
+    Text newCharacterSexText(textBoxFont, "", 40);
+    newCharacterSexText.setFillColor(Color::Black);
+    newCharacterSexText.setPosition(Vector2f(newCharacterCreationText.getPosition().x + 120, newCharacterCreationText.getPosition().y + 370));
+
+    string newCharacterDifficulty = "";
+    Text newCharacterDifficultyText(textBoxFont, "", 40);
+    newCharacterDifficultyText.setFillColor(Color::Black);
+    newCharacterDifficultyText.setPosition(Vector2f(newCharacterCreationText.getPosition().x + 270, newCharacterCreationText.getPosition().y + 475));
+
+    bool characterCreationFinished = false;
+
+    Text invalidInsertionText(textBoxFont, "Invalid Insertion", 40);
+    invalidInsertionText.setFillColor(Color::Red);
+    invalidInsertionText.setPosition(Vector2f(inputBox.getPosition().x + 10, inputBox.getPosition().y + 10));
 
 
     // Ciclo principale del gioco
@@ -144,12 +176,154 @@ int main ()
         {
             window.clear();
             window.draw(backgroundSprite);
-            textBox.setSize(rectangleSize);
-            textBox.setPosition(Vector2f(marginX, window.getSize().y - rectangleSize.y - marginY));
             window.draw(textBox);
-            /*
-                creazione personaggio con select_char()
-            */
+            window.draw(newCharacterCreationText);
+            window.draw(inputBox);
+            window.draw(playerText);
+            switch (characterCreationStep)
+            {
+                case 1:
+                    newCharacterNameText.setString(playerText.getString());
+                    break;
+                case 2:
+                    newCharacterRaceText.setString(playerText.getString());
+                    break;
+                case 3:
+                    newCharacterSexText.setString(playerText.getString());
+                    break;
+                case 4:
+                    newCharacterDifficultyText.setString(playerText.getString());
+                    break;
+                default:
+                    break;
+            }
+            window.draw(newCharacterNameText);
+            window.draw(newCharacterRaceText);
+            window.draw(newCharacterSexText);
+            window.draw(newCharacterDifficultyText);
+
+            if(checkForMouseClick(inputBox, window, mousePosition))
+            {
+                inputBoxSelected = true;
+                inputBox.setOutlineColor(Color(20, 90, 200));
+            } else if(Mouse::isButtonPressed(Mouse::Button::Left))
+            {
+                inputBoxSelected = false;
+                inputBox.setOutlineColor(Color::Black);
+            }
+
+            if (inputBox.getOutlineColor() == Color(20, 90, 200) && Keyboard::isKeyPressed(Keyboard::Key::Enter))
+            {
+                switch (characterCreationStep)
+                {
+                    case 1:
+                        newCharacterName = newCharacterNameText.getString();
+                        characterCreationStep ++;
+                        break;
+                    case 2:
+                        if (find(racesFirst, racesLast, newCharacterRaceText.getString()) != RACES.end()) 
+                        {
+                            // Se la razza è valida, salvala e passa allo step successivo
+                            newCharacterRace = newCharacterRaceText.getString();
+                            characterCreationStep++;
+                        } else 
+                        {
+                            // Se la razza è invalida, mostra il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Red);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                            Clock clock;
+                            while (clock.getElapsedTime().asSeconds() < 3.0f) 
+                            {
+                                // Lascio che il programma risponda agli eventi durante l'attesa
+                                 optional<Event> event;
+                                while ((event = window.pollEvent())) {
+                                    if (event->is<Event::Closed>()) {
+                                        window.close();
+                                    }
+                                }
+                            }
+                            // Nascondi il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Transparent);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                        }
+                        break;
+                    case 3:
+                        if (newCharacterSexText.getString() == "M" || newCharacterSexText.getString() == "F") 
+                        {
+                            // Se il sesso è valido, salvalo e passa allo step successivo
+                            newCharacterSex = newCharacterSexText.getString();
+                            characterCreationStep++;
+                        } else 
+                        {
+                            // Se il sesso è invalido, mostra il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Red);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                            Clock clock;
+                            while (clock.getElapsedTime().asSeconds() < 3.0f) 
+                            {
+                                // Lascio che il programma risponda agli eventi durante l'attesa
+                                optional<Event> event;
+                                while ((event = window.pollEvent())) {
+                                    if (event->is<Event::Closed>()) {
+                                        window.close();
+                                    }
+                                }
+                            }
+                            // Nascondi il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Transparent);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                        }
+                        break;
+                    case 4:
+                        if (find(difficultiesFirst, difficultiesLast, newCharacterDifficultyText.getString()) != DIFFICULTIES.end()) 
+                        {
+                            // Se la difficoltà è valida, salvala e passa allo step successivo
+                            newCharacterDifficulty = newCharacterDifficultyText.getString();
+                            characterCreationStep++;
+                            characterCreationFinished = true;
+                        } else 
+                        {
+                            // Se la difficoltà è invalida, mostra il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Red);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                            Clock clock;
+                            while (clock.getElapsedTime().asSeconds() < 3.0f) 
+                            {
+                                // Lascio che il programma risponda agli eventi durante l'attesa
+                                optional<Event> event;
+                                while ((event = window.pollEvent())) {
+                                    if (event->is<Event::Closed>()) {
+                                        window.close();
+                                    }
+                                }
+                            }
+                            // Nascondi il messaggio di errore
+                            invalidInsertionText.setFillColor(sf::Color::Transparent);
+                            window.draw(invalidInsertionText);
+                            window.display();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                inputBoxSelected = false;
+                inputBox.setOutlineColor(Color::Black);
+                playerInput.clear();
+                playerText.setString(playerInput);
+            
+                //Character playerCharacter = fromJSONtoCharacter(characterName);
+                //start_game(playerCharacter); 
+            } else if (characterCreationFinished)
+            {
+                Character playerCharacter (newCharacterName, newCharacterRace, newCharacterSex, newCharacterDifficulty);
+                playerCharacter.write_character_to_json(playerCharacter);
+                //start_game(playerCharacter);
+            }
         } else if (selection == "NO")
         {
             window.clear();
@@ -158,6 +332,7 @@ int main ()
             window.draw(characterSelectionText);
             window.draw(inputBox);
             window.draw(playerText);
+
             if(checkForMouseClick(inputBox, window, mousePosition))
             {
                 inputBoxSelected = true;
@@ -172,13 +347,15 @@ int main ()
                 inputBoxSelected = false;
                 inputBox.setOutlineColor(Color::Black);
                 characterName = playerText.getString().toAnsiString();
-                cout << endl << characterName << endl;
                 playerInput.clear();
                 playerText.setString(playerInput);
+                
+                Character playerCharacter = fromJSONtoCharacter(characterName);
+                //start_game(playerCharacter); 
             }
-            /*
-                selezione personaggio con select_char()
-            */
+
+            characterNamesList = selectCharacter(characterNamesList);
+            window.draw(characterNamesList);
         } else 
         {
             window.draw(textBox);
