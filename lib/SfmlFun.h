@@ -113,3 +113,35 @@ bool isMouseHovering(const sf::RectangleShape& rect, const sf::RenderWindow& win
     sf::FloatRect bounds = rect.getGlobalBounds();
     return bounds.contains(static_cast<sf::Vector2f>(mousePosition));
 }
+
+extern void createCharacter();
+
+Text selectCharacter(Text &characterNamesList) 
+{
+    json characters;
+    ifstream char_file("../include/characters.json");
+    if (char_file.is_open()) 
+    {
+        char_file >> characters;
+        char_file.close();
+        string char_name;
+        characterNamesList.setString("Available characters:\n");
+        for (const auto &character : characters["characters"]) 
+        {
+            characterNamesList.setString(characterNamesList.getString() + string(character["name"]) + " (Level " + to_string(character["level"].get<int>()) + ")\n");
+        }
+
+    } else if(char_file.fail()) {
+        cerr << "Error loading characters.json file." << endl;
+        exit(1);
+    } else {
+        cout << "No characters found. Please start a new game." << endl;
+        createCharacter();
+    } 
+    return characterNamesList;
+}
+
+void createCharacter() 
+{
+
+}
